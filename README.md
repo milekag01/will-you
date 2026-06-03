@@ -75,19 +75,24 @@ from a browser. ~3 minutes:
 > No `.env`? Totally fine. The app saves to `localStorage` and the recap's
 > "copy plan & text me" button still delivers the answer to you.
 
-## 4. Deploy (static — host it anywhere)
+## 4. Deploy (GitHub Pages)
+
+**Live at: https://milekag01.github.io/will-you/**
+
+Already wired up. To ship any change:
 
 ```bash
-npm run build      # outputs static files to /dist
+npm run deploy     # builds + pushes /dist to the gh-pages branch
 ```
 
-Upload the **`dist/`** folder to any static host:
+GitHub Pages serves the `gh-pages` branch. `vite.config.js` sets `base: './'`
+(relative asset paths) so the same build works at the project path now and at a
+custom domain later — no rebuild gymnastics.
 
-- **Vercel / Netlify / Cloudflare Pages** — connect the repo, framework "Vite",
-  build `npm run build`, output `dist`. Add the two `VITE_SUPABASE_*` vars in the
-  dashboard. You get an instant mobile-friendly `https://` link.
-- **Same place as milekway.in** — if that host serves static files, just upload
-  the contents of `dist/`. (Set the env vars at build time, or hardcode them in
-  `src/config.js`-style if your host can't do env vars — ask me and I'll wire that.)
+> ⚠️ **Env is baked at build time.** Put your Supabase keys / notify webhook in
+> `.env` *before* `npm run deploy`, or the live site won't have them.
 
-The link works great on mobile out of the box (responsive, safe-area aware).
+### Cuter URL: willyou.milekway.in (optional)
+1. Add a DNS `CNAME` record at milekway.in's provider: `willyou` → `milekag01.github.io`
+2. Drop a file `public/CNAME` containing `willyou.milekway.in`, then `npm run deploy`
+3. Repo → Settings → Pages → set the custom domain (it'll verify + issue HTTPS)
