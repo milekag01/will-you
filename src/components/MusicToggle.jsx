@@ -11,17 +11,23 @@ const srcUrl = /^https?:\/\//.test(config.music.src)
 const VOLUME = 0.45
 const FADE = 0.22 // seconds
 
-// Music via Web Audio rather than an <audio> element.
+const AC = typeof window !== 'undefined'
+  ? window.AudioContext || window.webkitAudioContext
+  : null
+
+// Music via Web Audio.
 //
-// An <audio> element decides when it's ready, and can stall on buffering or
-// seeking at the worst possible moment — the tap. Here the whole track is
-// downloaded and decoded to PCM in memory while she's still reading screen 1,
-// so the tap only has to call start(), which is sample-accurate and cannot
-// wait on anything.
+// iOS is the awkward one. An AudioContext created outside a user gesture can
+// end up permanently suspended, and resume() on it quietly does nothing — the
+// page looks fine and no sound ever arrives. So the raw bytes are fetched up
+// front (that part is safe anywhere), and if the context we built at load
+// won't run, we throw it away and build a fresh one *inside* the tap handler,
+// which iOS always honours.
 //
-// Autoplay policy still applies: an AudioContext starts suspended and only
-// resumes inside a real gesture. That's unavoidable in every browser.
+// Note decodeAudioData detaches the ArrayBuffer it's given, so every decode
+// gets its own copy.
 export default function MusicToggle() {
+  const bytesRef = useRef(null) // pristine ArrayBuffer, kept for re-decodes
   const ctxRef = useRef(null)
   const bufferRef = useRef(null)
   const gainRef = useRef(null)
@@ -31,47 +37,59 @@ export default function MusicToggle() {
   const [muted, setMuted] = useState(config.music.startMuted)
   const [broken, setBroken] = useState(false)
 
-  // ── fetch + decode ahead of time ──────────────────────────────────────
+  const makeContext = () => {
+    const ctx = new AC()
+    const gain = ctx.createGain()
+    gain.gain.value = 0
+    gain.connect(ctx.destination)
+    ctxRef.current = ctx
+    gainRef.current = gain
+    return ctx
+  }
+
+  const decodeInto = (ctx) =>
+    ctx.decodeAudioData(bytesRef.current.slice(0)).then((decoded) => {
+      bufferRef.current = decoded
+      return decoded
+    })
+
+  // ── fetch the bytes, and optimistically decode ────────────────────────
   useEffect(() => {
-    const AC = window.AudioContext || window.webkitAudioContext
     if (!AC) {
       setBroken(true)
       return
     }
     let cancelled = false
-    const ctx = new AC()
-    ctxRef.current = ctx
-
-    const gain = ctx.createGain()
-    gain.gain.value = 0
-    gain.connect(ctx.destination)
-    gainRef.current = gain
-
     const t0 = performance.now()
+
     fetch(srcUrl)
       .then((r) => {
         if (!r.ok) throw new Error('HTTP ' + r.status)
         return r.arrayBuffer()
       })
-      .then((bytes) => ctx.decodeAudioData(bytes))
+      .then((bytes) => {
+        if (cancelled) return null
+        bytesRef.current = bytes
+        // Desktop fast path. On iOS this context may be born unusable; that's
+        // fine, the tap handler will notice and replace it.
+        return decodeInto(makeContext())
+      })
       .then((decoded) => {
-        if (cancelled) return
-        bufferRef.current = decoded
+        if (cancelled || !decoded) return
         console.info(
           `[music] ready in ${Math.round(performance.now() - t0)}ms ` +
-            `(${decoded.duration.toFixed(0)}s decoded)`
+            `(${decoded.duration.toFixed(0)}s)`
         )
-        // She already tapped while it was still decoding — go now.
         if (wantsPlayRef.current) play()
       })
       .catch((e) => {
-        console.warn('[music] could not load', srcUrl, '—', e.message)
-        if (!cancelled) setBroken(true)
+        console.warn('[music] load failed:', e.message)
+        // A decode failure still leaves the bytes usable for a retry in-gesture.
+        if (!cancelled && !bytesRef.current) setBroken(true)
       })
 
     return () => {
       cancelled = true
-      ctx.close?.()
     }
   }, [])
 
@@ -84,35 +102,67 @@ export default function MusicToggle() {
     gain.gain.linearRampToValueAtTime(to, ctx.currentTime + FADE)
   }
 
-  const play = () => {
+  const startSource = () => {
     const ctx = ctxRef.current
-    const buffer = bufferRef.current
-    const gain = gainRef.current
-    if (!ctx || !gain) return
-    ctx.resume?.()
-    if (!buffer) {
-      wantsPlayRef.current = true // not decoded yet; start the moment it is
+    if (!ctx || !bufferRef.current || sourceRef.current) return
+    const source = ctx.createBufferSource()
+    source.buffer = bufferRef.current
+    source.loop = true
+    source.connect(gainRef.current)
+    source.start(0)
+    sourceRef.current = source
+  }
+
+  // Must be called from inside a real gesture for iOS to co-operate.
+  const play = () => {
+    if (!AC || !bytesRef.current) {
+      wantsPlayRef.current = true
       return
     }
-    if (!sourceRef.current) {
-      const source = ctx.createBufferSource()
-      source.buffer = buffer
-      source.loop = true
-      source.connect(gain)
-      source.start(0)
-      sourceRef.current = source
+    let ctx = ctxRef.current || makeContext()
+    ctx.resume?.()
+
+    // iOS tell: still not running even though we're in a gesture. The context
+    // is a dud — rebuild it here, where the gesture actually counts.
+    if (ctx.state !== 'running') {
+      try {
+        ctx.close?.()
+      } catch {
+        /* already dead */
+      }
+      sourceRef.current = null
+      bufferRef.current = null
+      ctx = makeContext()
+      ctx.resume?.()
+      decodeInto(ctx)
+        .then(() => {
+          startSource()
+          ramp(VOLUME)
+          console.info('[music] recovered with a gesture-built context')
+        })
+        .catch((e) => console.warn('[music] decode failed:', e.message))
+      return
     }
+
+    if (!bufferRef.current) {
+      wantsPlayRef.current = true // bytes are in, decode still running
+      return
+    }
+    startSource()
     ramp(VOLUME)
   }
 
-  // ── first interaction anywhere unmutes ────────────────────────────────
+  // ── first interaction anywhere starts it ──────────────────────────────
   useEffect(() => {
     if (config.music.startMuted) return
     const EVENTS = ['pointerdown', 'touchstart', 'keydown', 'click']
     const onFirst = () => {
       const t = performance.now()
       play()
-      console.info(`[music] started ${Math.round(performance.now() - t)}ms after tap`)
+      console.info(
+        `[music] tap handled in ${Math.round(performance.now() - t)}ms, ` +
+          `ctx=${ctxRef.current?.state}`
+      )
       EVENTS.forEach((e) => window.removeEventListener(e, onFirst, true))
     }
     EVENTS.forEach((e) => window.addEventListener(e, onFirst, true))

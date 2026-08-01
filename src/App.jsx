@@ -10,6 +10,11 @@ import Recap from './screens/Recap.jsx'
 
 const STEPS = ['intro', 'celebrate', 'when', 'food', 'vibe', 'recap']
 
+// Where "back" goes from each screen. Anything not listed has no back button:
+// intro/celebrate are before any choices, and recap has already been saved.
+// Answers live in `data`, so every screen repopulates when she returns.
+const BACK_TO = { when: 'celebrate', food: 'when', vibe: 'food' }
+
 export default function App() {
   const [step, setStep] = useState('intro')
   const [data, setData] = useState({
@@ -29,6 +34,17 @@ export default function App() {
     <div className="app">
       <BackgroundHearts />
       <MusicToggle />
+
+      {BACK_TO[step] && (
+        <button
+          className="back-btn"
+          onClick={() => go(BACK_TO[step])}
+          aria-label="go back"
+          title="go back"
+        >
+          ←
+        </button>
+      )}
 
       {step === 'intro' && <Intro onYes={() => go('celebrate')} />}
       {step === 'celebrate' && <Celebrate onNext={() => go('when')} />}
