@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { config } from '../config.js'
 import Hearts from '../components/Hearts.jsx'
 
-// Multi-select: you can pick more than one.
+// Single-select: this screen picks the FORMAT of the date (coffee vs dinner
+// vs drinks), and you only get one of those. Saved as a one-item array so the
+// stored shape stays the same as before.
 export default function FoodScreen({ value, onNext }) {
   const c = config.food
-  const [picked, setPicked] = useState(value.foods || [])
-
-  const toggle = (v) =>
-    setPicked((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))
+  const [picked, setPicked] = useState(value.foods?.[0] || '')
 
   return (
     <div className="screen">
@@ -18,12 +17,12 @@ export default function FoodScreen({ value, onNext }) {
 
       <div className="grid">
         {c.options.map((o) => {
-          const sel = picked.includes(o.value)
+          const sel = picked === o.value
           return (
             <button
               key={o.value}
               className={`choice ${sel ? 'sel' : ''}`}
-              onClick={() => toggle(o.value)}
+              onClick={() => setPicked(o.value)}
               aria-pressed={sel}
             >
               <span className="tick">✓</span>
@@ -36,10 +35,10 @@ export default function FoodScreen({ value, onNext }) {
 
       <button
         className="btn"
-        disabled={picked.length === 0}
-        onClick={() => onNext({ foods: picked })}
+        disabled={!picked}
+        onClick={() => onNext({ foods: [picked] })}
       >
-        {picked.length === 0 ? c.emptyButton : c.button}
+        {picked ? c.button : c.emptyButton}
       </button>
     </div>
   )

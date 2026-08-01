@@ -36,8 +36,8 @@ export default function Recap({ data }) {
   const plan = [
     "it's a date 💌",
     `when: ${dateStr} at ${data.time}`,
-    `food: ${foods}`,
-    `vibe: ${data.vibe}`,
+    `eat/drink: ${foods}`,
+    `doing: ${data.vibe}`,
   ].join('\n')
 
   const handleCopy = async () => {
@@ -75,7 +75,7 @@ export default function Recap({ data }) {
           <div className="recap-row">
             <span className="ico">🍽️</span>
             <div>
-              <div className="k">Food</div>
+              <div className="k">Eat &amp; drink</div>
               <div className="v">{foods}</div>
             </div>
           </div>
@@ -83,7 +83,7 @@ export default function Recap({ data }) {
           <div className="recap-row">
             <span className="ico">✨</span>
             <div>
-              <div className="k">Vibe</div>
+              <div className="k">Doing</div>
               <div className="v">{data.vibe}</div>
             </div>
           </div>

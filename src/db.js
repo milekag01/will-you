@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 const url = import.meta.env.VITE_SUPABASE_URL
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 const webhook = import.meta.env.VITE_NOTIFY_WEBHOOK // optional: Discord/Slack/Zapier
+const apiUrl = import.meta.env.VITE_API_URL // your luxembourg /api/date-response (Turso)
 
 export const hasSupabase = Boolean(url && key)
 
@@ -41,7 +42,23 @@ export async function saveResponse(data) {
   // 2. optional instant ping to your phone
   pingMe(data)
 
-  // 3. direct-to-DB write (no backend)
+  // 3. reuse your Turso DB via the luxembourg API (server-side write)
+  if (apiUrl) {
+    try {
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      return { ok: true, where: 'api' }
+    } catch (e) {
+      console.warn('[db] API write failed, kept a local copy:', e?.message)
+      return { ok: false, where: 'local', error: e?.message }
+    }
+  }
+
+  // 4. or write directly to Supabase (if configured instead)
   if (!supabase) return { ok: true, where: 'local' }
   try {
     const { error } = await supabase.from('responses').insert([data])

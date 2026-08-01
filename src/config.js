@@ -7,7 +7,7 @@
 export const config = {
   // Your phone number for the "text me" button (include country code, digits only).
   // Example India: "+919876543210". Leave as "" to just copy the plan to clipboard.
-  yourPhone: '',
+  yourPhone: '+919537464102',
 
   // Optional little signature on the final screen.
   yourName: 'me',
@@ -29,6 +29,9 @@ export const config = {
     sticker: '🥹',
     title: 'WAIT… REALLY?? 🎉',
     subtitle: 'be cool be cool be cool',
+    // The sincere beat, right after the panic joke. Set quote to '' to hide both.
+    quoteLead: 'okay i wanna admit something…',
+    quote: "every time my phone vibrates, i hope it's you.",
     button: "let's plan it →",
   },
 
@@ -41,54 +44,65 @@ export const config = {
     placeholder: 'pick a time…',
     // value = what gets saved; label = the cute line she sees in the dropdown
     times: [
-      { value: '5:30 PM', label: '5:30 PM — chai + sunset type beat ☕' },
-      { value: '6:30 PM', label: '6:30 PM — responsible-adult hours, respect' },
-      { value: '7:30 PM', label: '7:30 PM — peak dinner, peak vibes' },
+      { value: '7:00 PM', label: '7:00 PM — early start, no rushing anything ✨' },
+      { value: '7:30 PM', label: '7:30 PM — golden hour, easy pace 🌇' },
+      { value: '8:00 PM', label: "8:00 PM — dinner o'clock, let's go 🍽️" },
       { value: '8:30 PM', label: '8:30 PM — fashionably late, noted 👀' },
-      { value: '9:30 PM', label: '9:30 PM — late-night menace hours 🌙' },
+      { value: '9:00 PM', label: '9:00 PM — late-night menace hours 🌜' },
     ],
     button: 'next →',
   },
 
-  // ── Screen 4: food (multi-select) ───────────────────────────────────────
+  // ── Screen 4: the eat/drink part (single-select) ─────────────────────────
+  //  This screen is the FORMAT of the date, not the cuisine. "Coffee" and
+  //  "Dinner" are different kinds of evening; "dosa vs biryani" is a text
+  //  message later. Keeping cuisine out is what stops this screen and the
+  //  next one from blurring into each other.
   food: {
-    title: 'what are we eating? 😋',
-    subtitle: '(pick as many as you want, no judgement)',
+    title: 'what sounds good? 😋',
+    subtitle: 'the eating-and-drinking part',
     options: [
-      { value: 'Dosa', emoji: '🫓' },
-      { value: 'Biryani', emoji: '🍛' },
-      { value: 'North Indian', emoji: '🧈' },
-      { value: 'Chaat / street food', emoji: '🥘' },
-      { value: 'Pan-Asian', emoji: '🍜' },
-      { value: 'Pizza', emoji: '🍕' },
+      { value: 'Coffee', emoji: '☕' },
+      { value: 'Dinner', emoji: '🍽️' },
+      { value: 'Drinks', emoji: '🍸' },
+      { value: 'Dessert', emoji: '🍰' },
+      { value: 'Street food', emoji: '🥘' },
+      // the graceful opt-out — still a real answer, not a skipped screen
+      { value: 'You pick', emoji: '🤷' },
     ],
-    button: 'this one! →',
-    emptyButton: 'pick at least one',
+    button: 'next →',
+    emptyButton: 'pick one first',
   },
 
-  // ── Screen 5: vibe / activity (single-select) ───────────────────────────
+  // ── Screen 5: the doing part (single-select) ────────────────────────────
+  //  Strictly things you DO. Nothing you consume belongs here — that's
+  //  screen 4's job.
   vibe: {
-    title: 'and the vibe? 🌙',
-    subtitle: 'what should we actually do',
+    title: 'and what do we do? 🌙',
+    subtitle: 'the actually-doing-something part',
     options: [
-      { value: 'Cubbon Park walk', emoji: '🌳' },
-      { value: 'Brewery hop', emoji: '🍺' },
-      { value: 'Wine night', emoji: '🍷' },
-      { value: 'Dancing', emoji: '💃' },
-      { value: 'A long talk', emoji: '🗣️' },
-      { value: 'Long drive', emoji: '🚗' },
+      { value: 'Walk', emoji: '🌳' },
+      { value: 'Bowling', emoji: '🎳' },
+      { value: 'Karaoke', emoji: '🎤' },
+      { value: 'Escape room', emoji: '🕵️' },
+      { value: 'Art evening', emoji: '🎨' },
+      // custom: true turns this one into a "type your own" box.
+      { value: 'Something else', emoji: '💡', custom: true },
     ],
     // playful one-liners that pop up when a specific vibe is selected
     reactions: {
-      Dancing: 'oh so you DO wanna watch me embarrass myself 💀 bet.',
-      'Brewery hop': 'a woman of culture. Toit it is 🍺',
-      'Long drive': 'Nandi Hills at 5am? unhinged. i love it 🚗',
-      'Wine night': 'okay okay, fancy. i can do fancy 🍷',
-      'Cubbon Park walk': 'soft launch energy. i approve 🌳',
-      'A long talk': 'careful, i actually will talk for 4 hours 🗣️',
+      Walk: 'soft launch energy. i approve 🌳',
+      Bowling: "i'm bad at this and i'm still gonna trash talk 🎳",
+      Karaoke: 'oh so you DO wanna watch me embarrass myself 💀 bet.',
+      'Escape room': 'locked in a room together. bold opening move 🕵️',
+      'Art evening': "cultured. i'll nod like i know what i'm looking at 🎨",
+      'Something else': "okay okay, surprise me. i'm listening 👀",
     },
+    // placeholder for the "Something else" text box
+    customPlaceholder: 'so what do you wanna do? 👀',
     button: 'this one! →',
     emptyButton: 'pick one first',
+    emptyCustomButton: 'type it out first',
   },
 
   // ── Screen 6: the recap ─────────────────────────────────────────────────
@@ -106,7 +120,9 @@ export const config = {
   // Drop your track at  public/music/song.mp3  (or change the path).
   // Mobile blocks autoplay, so it starts on the first tap. There's a mute button.
   music: {
-    src: '/music/song.mp3',
+    // No leading slash — it's resolved against the deploy base, so the same
+    // build works at a domain root AND at a /repo/ GitHub Pages path.
+    src: 'music/song.m4a',
     startMuted: false,
   },
 }

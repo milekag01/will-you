@@ -112,6 +112,63 @@ h1 {
   margin: 0;
   font-weight: 600;
 }
+/* The confession on the celebrate screen. Staggered on purpose: the joke
+   lands, then the lead-in, then the actual line — so the sincere bit gets
+   its own beat instead of arriving on top of the confetti. */
+.confession {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0;
+}
+.confession::before {
+  content: '';
+  width: 34px;
+  height: 2px;
+  margin-bottom: 10px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.3;
+  animation: rise 0.4s ease both;
+  animation-delay: 0.5s;
+}
+.confession-lead {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  font-weight: 600;
+  animation: rise 0.45s ease both;
+  animation-delay: 0.7s;
+}
+.quote {
+  margin: 0;
+  max-width: 20ch;
+  text-align: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1.45;
+  color: var(--accent-deep);
+  animation: rise 0.5s ease both;
+  animation-delay: 1.15s;
+}
+.vibe-input {
+  width: 100%;
+  background: var(--card-solid);
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 16px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+  animation: rise 0.35s ease both;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.vibe-input::placeholder { color: var(--ink-soft); font-weight: 600; }
+.vibe-input:focus { border-color: var(--accent); }
 .reaction {
   margin: 2px 0 0;
   font-family: var(--serif);
@@ -198,6 +255,12 @@ h1 {
 /* ── cards / form ───────────────────────────────────────── */
 .card {
   width: 100%;
+  /* backdrop-filter makes this a stacking context, which traps the time
+     dropdown inside the card. The disabled CTA below has a filter (so it
+     gets its own context at z-index 0) and would paint over the open panel
+     without this. Keep the card above it. */
+  position: relative;
+  z-index: 2;
   background: var(--card);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.7);

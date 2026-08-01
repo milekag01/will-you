@@ -32,6 +32,12 @@ export default function Celebrate({ onNext }) {
       <div className="sticker">{c.sticker}</div>
       <h1>{c.title}</h1>
       <p className="subtitle">{c.subtitle}</p>
+      {c.quote && (
+        <div className="confession">
+          {c.quoteLead && <p className="confession-lead">{c.quoteLead}</p>}
+          <p className="quote">{c.quote}</p>
+        </div>
+      )}
       <button className="btn" onClick={onNext} style={{ marginTop: 8 }}>
         {c.button}
       </button>
